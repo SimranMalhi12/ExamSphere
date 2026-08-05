@@ -3,6 +3,8 @@ package com.examsphere.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "categories")
 @Getter
@@ -21,4 +23,10 @@ public class Category {
 
     @Column(length = 500)
     private String description;
+
+    @OneToMany(mappedBy = "category",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<Subject> subjects;
+
 }
