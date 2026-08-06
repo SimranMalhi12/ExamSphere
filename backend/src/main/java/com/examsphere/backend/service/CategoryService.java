@@ -1,11 +1,14 @@
 package com.examsphere.backend.service;
 
+
 import com.examsphere.backend.dto.CategoryRequest;
 import com.examsphere.backend.dto.CategoryResponse;
 import com.examsphere.backend.entity.Category;
 import com.examsphere.backend.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.examsphere.backend.exception.DuplicateResourceException;
+import com.examsphere.backend.exception.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -19,7 +22,7 @@ public class CategoryService {
     public CategoryResponse createCategory(CategoryRequest request) {
 
         if (categoryRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Category already exists");
+            throw new DuplicateResourceException("Category already exists");
         }
 
         Category category = Category.builder()
@@ -45,7 +48,7 @@ public class CategoryService {
     public CategoryResponse getCategoryById(Long id) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         return mapToResponse(category);
     }
@@ -54,7 +57,7 @@ public class CategoryService {
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         category.setName(request.getName());
         category.setDescription(request.getDescription());
@@ -68,7 +71,7 @@ public class CategoryService {
     public String deleteCategory(Long id) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         categoryRepository.delete(category);
 

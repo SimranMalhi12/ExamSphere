@@ -1,4 +1,38 @@
 package com.examsphere.backend.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "exams")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Exam {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String title;
+
+    private String description;
+
+    private Integer duration;
+
+    private Integer totalMarks;
+
+    @Enumerated(EnumType.STRING)
+    private ExamStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+
+    @Column(nullable = false)
+    private Integer passingMarks;
+
 }

@@ -2,6 +2,7 @@ package com.examsphere.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
 
 @Entity
 @Table(name = "subjects")
@@ -25,5 +26,10 @@ public class Subject {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    @OneToMany(mappedBy = "subject",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<Question> questions;
 
 }

@@ -4,6 +4,7 @@ import com.examsphere.backend.dto.SubjectRequest;
 import com.examsphere.backend.dto.SubjectResponse;
 import com.examsphere.backend.entity.Category;
 import com.examsphere.backend.entity.Subject;
+import com.examsphere.backend.exception.DuplicateResourceException;
 import com.examsphere.backend.repository.CategoryRepository;
 import com.examsphere.backend.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class SubjectService {
     public SubjectResponse createSubject(SubjectRequest request) {
 
         if (subjectRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Subject already exists");
+            throw new DuplicateResourceException("Subject already exists");
         }
 
         Category category = categoryRepository.findById(request.getCategoryId())
