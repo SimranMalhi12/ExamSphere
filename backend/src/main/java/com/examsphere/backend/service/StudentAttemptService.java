@@ -11,6 +11,11 @@ import com.examsphere.backend.repository.StudentAttemptRepository;
 import com.examsphere.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.examsphere.backend.dto.ResultResponse;
+import com.examsphere.backend.entity.StudentAnswer;
+import com.examsphere.backend.repository.StudentAnswerRepository;
+
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +26,7 @@ public class StudentAttemptService {
     private final StudentAttemptRepository attemptRepository;
     private final UserRepository userRepository;
     private final ExamRepository examRepository;
+    private final StudentAnswerRepository answerRepository;
 
     public StudentAttemptResponse startExam(StudentAttemptRequest request) {
 
@@ -54,6 +60,43 @@ public class StudentAttemptService {
                 .examTitle(exam.getTitle())
                 .startTime(saved.getStartTime())
                 .submitted(saved.getSubmitted())
+                .build();
+    }
+
+    public ResultResponse submitExam(Long attemptId) {
+
+        StudentAttempt attempt = attemptRepository.findById(attemptId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attempt not found"));
+
+        List<StudentAnswer> answers = answerRepository.findByAttemptId(attemptId);
+
+        int totalQuestions = answers.size();
+
+        int correctAnswers = 0;
+
+        for (StudentAnswer answer : answers) {
+            if (Boolean.TRUE.equals(answer.getCorrect())) {
+                correctAnswers++;
+            }
+        }
+
+        int totalMarks = attempt.getExam().getTotalMarks();
+
+        int score = (correctAnswers * totalMarks) / totalQuestions;
+
+        attempt.setScore(score);
+        attempt.setSubmitted(true);
+
+        attemptRepository.save(attempt);
+
+        boolean passed = score >= attempt.getExam().getPassingMarks();
+
+        return ResultResponse.builder()
+                .attemptId(attempt.getId())
+                .totalQuestions(totalQuestions)
+                .correctAnswers(correctAnswers)
+                .score(score)
+                .passed(passed)
                 .build();
     }
 }

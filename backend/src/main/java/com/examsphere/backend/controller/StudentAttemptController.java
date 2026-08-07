@@ -1,5 +1,6 @@
 package com.examsphere.backend.controller;
 
+import com.examsphere.backend.dto.ResultResponse;
 import com.examsphere.backend.dto.StudentAttemptRequest;
 import com.examsphere.backend.dto.StudentAttemptResponse;
 import com.examsphere.backend.service.StudentAttemptService;
@@ -20,5 +21,12 @@ public class StudentAttemptController {
             @RequestBody StudentAttemptRequest request) {
 
         return ResponseEntity.ok(attemptService.startExam(request));
+    }
+
+    @PostMapping("/submit/{attemptId}")
+    public ResponseEntity<ResultResponse> submitExam(
+            @PathVariable Long attemptId) {
+
+        return ResponseEntity.ok(attemptService.submitExam(attemptId));
     }
 }
