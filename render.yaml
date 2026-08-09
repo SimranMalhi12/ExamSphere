@@ -1,15 +1,11 @@
 services:
-  # MySQL Database Service on Render
+  # MySQL Database Service on Render (Free Tier without paid disk)
   - type: pserv
     name: examsphere-mysql
     env: docker
     dockerContext: .
     dockerfilePath: backend/Dockerfile.mysql
     plan: free
-    disk:
-      name: mysql-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
     envVars:
       - key: MYSQL_DATABASE
         value: exam_portal
