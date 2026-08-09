@@ -1,18 +1,5 @@
 services:
-  # MySQL Database Service on Render
-  - type: pserv
-    name: examsphere-mysql
-    env: docker
-    dockerContext: backend
-    dockerfilePath: backend/Dockerfile.mysql
-    plan: starter
-    envVars:
-      - key: MYSQL_DATABASE
-        value: exam_portal
-      - key: MYSQL_ROOT_PASSWORD
-        value: rootpassword123
-
-  # Spring Boot Backend Service on Render
+  # Spring Boot Backend Service on Render (Free Tier)
   - type: web
     name: examsphere-backend
     env: docker
@@ -20,18 +7,6 @@ services:
     dockerfilePath: backend/Dockerfile
     plan: free
     envVars:
-      - key: DATABASE_URL
-        value: jdbc:mysql://examsphere-mysql:3306/exam_portal?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-      - key: DATABASE_USERNAME
-        value: root
-      - key: DATABASE_PASSWORD
-        value: rootpassword123
-      - key: SPRING_DATASOURCE_URL
-        value: jdbc:mysql://examsphere-mysql:3306/exam_portal?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-      - key: SPRING_DATASOURCE_USERNAME
-        value: root
-      - key: SPRING_DATASOURCE_PASSWORD
-        value: rootpassword123
       - key: JWT_SECRET
         value: 9a3f2c4d5e6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c
       - key: PORT
