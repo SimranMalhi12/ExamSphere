@@ -4,8 +4,11 @@ import com.examsphere.backend.dto.QuestionRequest;
 import com.examsphere.backend.dto.QuestionResponse;
 import com.examsphere.backend.entity.Question;
 import com.examsphere.backend.entity.Subject;
+import com.examsphere.backend.entity.User;
 import com.examsphere.backend.repository.QuestionRepository;
 import com.examsphere.backend.repository.SubjectRepository;
+import com.examsphere.backend.repository.UserRepository;
+import com.examsphere.backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +20,25 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final SubjectRepository subjectRepository;
+    private final UserRepository userRepository;
 
     // Create Question
     public QuestionResponse createQuestion(QuestionRequest request) {
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
+
+        String email = SecurityUtils.getCurrentUserEmail();
+        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+
+        if (currentUser == null) {
+            throw new RuntimeException("Authentication Required: You must be logged in to create a question.");
+        }
+
+        if (currentUser.getCanManageQuestions() != null && !currentUser.getCanManageQuestions()
+                && !"SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName())) {
+            throw new RuntimeException("Permission Denied: Your admin account has not been granted permission to manage questions. Please contact the Super Administrator.");
+        }
 
         Question question = Question.builder()
                 .questionText(request.getQuestionText())
@@ -34,6 +50,7 @@ public class QuestionService {
                 .difficulty(request.getDifficulty())
                 .marks(request.getMarks())
                 .subject(subject)
+                .createdBy(currentUser)
                 .build();
 
         Question savedQuestion = questionRepository.save(question);
@@ -41,8 +58,26 @@ public class QuestionService {
         return mapToResponse(savedQuestion);
     }
 
-    // Get All Questions
+    // Get All Questions (Isolated per admin if caller is admin)
     public List<QuestionResponse> getAllQuestions() {
+
+        String email = SecurityUtils.getCurrentUserEmail();
+        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+
+        if (currentUser != null && currentUser.getRole() != null) {
+            String roleName = currentUser.getRole().getName();
+            if ("ADMIN".equalsIgnoreCase(roleName)) {
+                return questionRepository.findByCreatedById(currentUser.getId())
+                        .stream()
+                        .map(this::mapToResponse)
+                        .toList();
+            } else if ("SUPER_ADMIN".equalsIgnoreCase(roleName)) {
+                return questionRepository.findAll()
+                        .stream()
+                        .map(this::mapToResponse)
+                        .toList();
+            }
+        }
 
         return questionRepository.findAll()
                 .stream()
@@ -59,11 +94,23 @@ public class QuestionService {
         return mapToResponse(question);
     }
 
+    // Get Questions By Subject Id
+    public List<QuestionResponse> getQuestionsBySubjectId(Long subjectId) {
+        return questionRepository.findBySubjectId(subjectId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     // Update Question
     public QuestionResponse updateQuestion(Long id, QuestionRequest request) {
 
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Question not found"));
+
+        String email = SecurityUtils.getCurrentUserEmail();
+        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+        validateOwnership(question, currentUser);
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new RuntimeException("Subject not found"));
@@ -89,9 +136,24 @@ public class QuestionService {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Question not found"));
 
+        String email = SecurityUtils.getCurrentUserEmail();
+        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+        validateOwnership(question, currentUser);
+
         questionRepository.delete(question);
 
         return "Question Deleted Successfully";
+    }
+
+    private void validateOwnership(Question question, User currentUser) {
+        if (currentUser != null && question.getCreatedBy() != null) {
+            if ("SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName())) {
+                return;
+            }
+            if (!question.getCreatedBy().getId().equals(currentUser.getId())) {
+                throw new RuntimeException("Access Denied: You cannot modify questions created by another administrator.");
+            }
+        }
     }
 
     // Helper Method
@@ -109,6 +171,8 @@ public class QuestionService {
                 .marks(question.getMarks())
                 .subjectId(question.getSubject().getId())
                 .subjectName(question.getSubject().getName())
+                .createdById(question.getCreatedBy() != null ? question.getCreatedBy().getId() : null)
+                .createdByName(question.getCreatedBy() != null ? question.getCreatedBy().getFullName() : null)
                 .build();
     }
 }

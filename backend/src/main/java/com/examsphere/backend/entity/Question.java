@@ -44,4 +44,8 @@ public class Question {
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
+
 }

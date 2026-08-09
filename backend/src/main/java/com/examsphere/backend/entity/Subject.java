@@ -32,4 +32,8 @@ public class Subject {
             orphanRemoval = true)
     private List<Question> questions;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
+
 }

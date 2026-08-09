@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.examsphere.backend.dto.LoginRequest;
 import com.examsphere.backend.response.AuthenticationResponse;
+
 @Service
 public class UserService {
 
@@ -18,7 +19,7 @@ public class UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public UserService(UserRepository userRepository ,RoleRepository roleRepository,BCryptPasswordEncoder passwordEncoder, JwtService jwtService) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -32,24 +33,27 @@ public class UserService {
         }
 
         User user = new User();
-
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
-
-        // Password encryption
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Every new user is STUDENT
-        Role studentRole = roleRepository.findByName("STUDENT")
-                .orElseThrow(() -> new RuntimeException("Student role not found"));
+        // Public self-registration is strictly for STUDENT accounts
+        Role assignedRole = roleRepository.findByName("STUDENT")
+                .orElseGet(() -> {
+                    Role newRole = new Role(null, "STUDENT");
+                    return roleRepository.save(newRole);
+                });
 
-        user.setRole(studentRole);
+        user.setRole(assignedRole);
+        user.setCanCreateExams(false);
+        user.setCanManageQuestions(false);
+        user.setCanManageSubjects(false);
+        user.setCanViewSubmissions(false);
+        user.setIsActive(true);
 
         userRepository.save(user);
 
         return "Registration Successful";
-
-
     }
 
     public AuthenticationResponse login(LoginRequest request) {
@@ -61,14 +65,23 @@ public class UserService {
             throw new RuntimeException("Invalid Password");
         }
 
+        if (user.getIsActive() != null && !user.getIsActive()) {
+            throw new RuntimeException("Account has been suspended by the Super Administrator. Please contact support.");
+        }
+
         String token = jwtService.generateToken(user.getEmail());
 
-        return new AuthenticationResponse(
-                token,
-                user.getFullName(),
-                user.getRole().getName()
-        );
+        return AuthenticationResponse.builder()
+                .token(token)
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .role(user.getRole() != null ? user.getRole().getName() : "STUDENT")
+                .canCreateExams(user.getCanCreateExams() != null ? user.getCanCreateExams() : true)
+                .canManageQuestions(user.getCanManageQuestions() != null ? user.getCanManageQuestions() : true)
+                .canManageSubjects(user.getCanManageSubjects() != null ? user.getCanManageSubjects() : true)
+                .canViewSubmissions(user.getCanViewSubmissions() != null ? user.getCanViewSubmissions() : true)
+                .isActive(user.getIsActive() != null ? user.getIsActive() : true)
+                .build();
     }
-
-
 }

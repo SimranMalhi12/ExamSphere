@@ -1,0 +1,4 @@
+FROM mysql:8.0
+ENV MYSQL_DATABASE=exam_portal
+ENV MYSQL_ROOT_PASSWORD=rootpassword123
+EXPOSE 3306

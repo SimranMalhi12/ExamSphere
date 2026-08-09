@@ -12,6 +12,14 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
     boolean existsByName(String name);
 
+    boolean existsByNameAndCreatedById(String name, Long createdById);
+
     List<Subject> findByCategoryId(Long categoryId);
+
+    List<Subject> findByCreatedById(Long createdById);
+
+    List<Subject> findByCreatedByIdOrCreatedByIsNull(Long createdById);
+
+    long countByCreatedById(Long createdById);
 
 }

@@ -18,7 +18,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name;
 
     @Column(length = 500)
@@ -28,5 +28,9 @@ public class Category {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<Subject> subjects;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
 
 }

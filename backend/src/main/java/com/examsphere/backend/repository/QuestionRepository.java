@@ -14,4 +14,12 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     List<Question> findBySubjectIdAndDifficulty(Long subjectId, Difficulty difficulty);
 
+    List<Question> findByCreatedById(Long createdById);
+
+    List<Question> findByCreatedByIdOrCreatedByIsNull(Long createdById);
+
+    List<Question> findBySubjectIdAndCreatedById(Long subjectId, Long createdById);
+
+    long countByCreatedById(Long createdById);
+
 }
