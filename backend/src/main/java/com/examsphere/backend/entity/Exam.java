@@ -35,11 +35,4 @@ public class Exam {
     @Column(nullable = false)
     private Integer passingMarks;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_id")
-    private User createdBy;
-
-    @Column(name = "access_code", length = 30)
-    private String accessCode;
-
 }

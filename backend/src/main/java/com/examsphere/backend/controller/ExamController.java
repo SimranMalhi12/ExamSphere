@@ -14,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/exams")
 @RequiredArgsConstructor
+
 public class ExamController {
 
     private final ExamService examService;
@@ -30,18 +31,6 @@ public class ExamController {
     public ResponseEntity<List<ExamResponse>> getAllExams() {
 
         return ResponseEntity.ok(examService.getAllExams());
-    }
-
-    @GetMapping("/my-exams")
-    public ResponseEntity<List<ExamResponse>> getMyExams() {
-
-        return ResponseEntity.ok(examService.getMyExams());
-    }
-
-    @GetMapping("/code/{accessCode}")
-    public ResponseEntity<ExamResponse> getExamByAccessCode(@PathVariable String accessCode) {
-
-        return ResponseEntity.ok(examService.getExamByAccessCode(accessCode));
     }
 
     @GetMapping("/{id}")

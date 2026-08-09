@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from "react";
 import {
   getAllExams,
-  getMyExams,
   createExam,
   updateExam,
   deleteExam,
 } from "../../services/examService";
 import { getSubjects } from "../../services/subjectService";
 import { getQuestions } from "../../services/questionService";
-import { getAttemptsByExam } from "../../services/attemptService";
-import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import PageHeader from "../../components/ui/PageHeader";
 import Button from "../../components/ui/Button";
@@ -27,17 +24,9 @@ import {
   Edit2,
   Trash2,
   Eye,
-  Copy,
-  Check,
-  Share2,
-  Users,
-  CheckCircle2,
-  XCircle,
-  ExternalLink,
 } from "lucide-react";
 
 const Exams = () => {
-  const { user } = useAuth();
   const toast = useToast();
   const [exams, setExams] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -53,11 +42,7 @@ const Exams = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isSubmissionsOpen, setIsSubmissionsOpen] = useState(false);
-  const [examSubmissions, setExamSubmissions] = useState([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(null);
 
   const [currentExam, setCurrentExam] = useState(null);
   const initialForm = {
@@ -66,9 +51,8 @@ const Exams = () => {
     duration: 60,
     totalMarks: 100,
     passingMarks: 40,
-    status: "PUBLISHED",
+    status: "DRAFT",
     subjectId: "",
-    accessCode: "",
   };
   const [formData, setFormData] = useState(initialForm);
   const [formErrors, setFormErrors] = useState({});
@@ -78,7 +62,7 @@ const Exams = () => {
     setError(false);
     try {
       const [examsData, subjectsData, questionsData] = await Promise.all([
-        getMyExams(),
+        getAllExams(),
         getSubjects(),
         getQuestions().catch(() => []),
       ]);
@@ -131,9 +115,8 @@ const Exams = () => {
       duration: exam.duration || 60,
       totalMarks: exam.totalMarks || 100,
       passingMarks: exam.passingMarks || 40,
-      status: exam.status || "PUBLISHED",
+      status: exam.status || "DRAFT",
       subjectId: String(exam.subjectId || ""),
-      accessCode: exam.accessCode || "",
     });
     setFormErrors({});
     setIsEditOpen(true);
@@ -144,40 +127,9 @@ const Exams = () => {
     setIsViewOpen(true);
   };
 
-  const handleOpenSubmissions = async (exam) => {
-    setCurrentExam(exam);
-    setIsSubmissionsOpen(true);
-    setLoadingSubmissions(true);
-    try {
-      const data = await getAttemptsByExam(exam.id);
-      setExamSubmissions(data || []);
-    } catch (err) {
-      toast.error("Failed to load candidate submissions");
-      setExamSubmissions([]);
-    } finally {
-      setLoadingSubmissions(false);
-    }
-  };
-
   const handleOpenDelete = (exam) => {
     setCurrentExam(exam);
     setIsDeleteOpen(true);
-  };
-
-  const handleCopyCode = (code, e) => {
-    e?.stopPropagation();
-    if (!code) return;
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    toast.success(`Access code ${code} copied to clipboard!`);
-    setTimeout(() => setCopiedCode(null), 2500);
-  };
-
-  const handleCopyLink = (examId, e) => {
-    e?.stopPropagation();
-    const link = `${window.location.origin}/student/exam/${examId}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Candidate test link copied to clipboard!");
   };
 
   const handleCreateSubmit = async (e) => {
@@ -194,9 +146,8 @@ const Exams = () => {
         passingMarks: Number(formData.passingMarks),
         status: formData.status,
         subjectId: Number(formData.subjectId),
-        accessCode: formData.accessCode ? formData.accessCode.trim() : undefined,
       });
-      toast.success("Exam created successfully in your isolated workspace");
+      toast.success("Exam created successfully");
       setIsCreateOpen(false);
       loadData();
     } catch (err) {
@@ -221,7 +172,6 @@ const Exams = () => {
         passingMarks: Number(formData.passingMarks),
         status: formData.status,
         subjectId: Number(formData.subjectId),
-        accessCode: formData.accessCode ? formData.accessCode.trim() : undefined,
       });
       toast.success("Exam updated successfully");
       setIsEditOpen(false);
@@ -255,9 +205,9 @@ const Exams = () => {
   }));
 
   const statusOptions = [
-    { value: "PUBLISHED", label: "PUBLISHED (Active & visible to students)" },
-    { value: "DRAFT", label: "DRAFT (Private, hidden from candidates)" },
-    { value: "CLOSED", label: "CLOSED (Testing concluded)" },
+    { value: "DRAFT", label: "DRAFT (Hidden from candidates)" },
+    { value: "PUBLISHED", label: "PUBLISHED (Active for students)" },
+    { value: "CLOSED", label: "CLOSED (Assessment concluded)" },
   ];
 
   const filteredExams = exams.filter((exam) => {
@@ -266,7 +216,6 @@ const Exams = () => {
       exam.title?.toLowerCase().includes(q) ||
       exam.description?.toLowerCase().includes(q) ||
       exam.subjectName?.toLowerCase().includes(q) ||
-      exam.accessCode?.toLowerCase().includes(q) ||
       String(exam.id).includes(q);
 
     const matchesStatus = !statusFilter || exam.status === statusFilter;
@@ -283,7 +232,7 @@ const Exams = () => {
     <div className="space-y-6">
       <PageHeader
         title="Exam Management"
-        subtitle="Create, schedule, and distribute unique assessments. All exams created here are private to your admin portal."
+        subtitle="Configure, publish, and schedule student assessments and passing thresholds"
         breadcrumbs={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Exams" }]}
         actions={
           <Button variant="primary" size="sm" icon={Plus} onClick={handleOpenCreate}>
@@ -297,7 +246,7 @@ const Exams = () => {
           <div className="w-full sm:w-72">
             <Input
               id="search"
-              placeholder="Search exam, subject, or code..."
+              placeholder="Search exam title..."
               icon={Search}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -311,8 +260,8 @@ const Exams = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Statuses</option>
-              <option value="PUBLISHED">PUBLISHED</option>
               <option value="DRAFT">DRAFT</option>
+              <option value="PUBLISHED">PUBLISHED</option>
               <option value="CLOSED">CLOSED</option>
             </select>
           </div>
@@ -333,12 +282,12 @@ const Exams = () => {
           </div>
         </div>
         <div className="text-xs font-mono text-zinc-500 self-end lg:self-center">
-          My Exams: <span className="font-bold text-zinc-950">{exams.length}</span>
+          Total Exams: <span className="font-bold text-zinc-950">{exams.length}</span>
         </div>
       </div>
 
       {loading ? (
-        <Loader text="Loading your private examinations..." />
+        <Loader text="Loading exams..." />
       ) : error ? (
         <ErrorState
           title="Failed to Load Exams"
@@ -351,12 +300,12 @@ const Exams = () => {
           title={
             searchQuery || statusFilter || subjectFilter
               ? "No matching exams found"
-              : "No exams created yet"
+              : "No exams configured"
           }
           description={
             searchQuery || statusFilter || subjectFilter
               ? "Try adjusting your filter settings or search keyword."
-              : "Create your first examination. It will generate a unique access code to share with your students."
+              : "Get started by creating and publishing your first exam assessment."
           }
           actionText={
             searchQuery || statusFilter || subjectFilter ? undefined : "Create First Exam"
@@ -368,117 +317,78 @@ const Exams = () => {
       ) : (
         <Table
           headers={[
-            { label: "Access Code", className: "w-36" },
+            { label: "ID", className: "w-16" },
             { label: "Exam Title" },
             { label: "Subject" },
             { label: "Duration" },
             { label: "Marks (Total/Pass)" },
             { label: "Status" },
-            { label: "Actions", className: "text-right w-72" },
+            { label: "Actions", className: "text-right w-52" },
           ]}
         >
-          {filteredExams.map((exam) => {
-            const isCodeCopied = copiedCode === exam.accessCode;
-            return (
-              <tr key={exam.id} className="hover:bg-zinc-50 transition-colors">
-                <td className="py-3.5 px-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono font-bold text-xs bg-zinc-100 border border-zinc-300 px-2 py-0.5 text-zinc-900 tracking-wider">
-                      {exam.accessCode || `EXAM-${exam.id}`}
-                    </span>
-                    <button
-                      onClick={(e) => handleCopyCode(exam.accessCode || `EXAM-${exam.id}`, e)}
-                      title="Copy access code"
-                      className="p-1 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-200 transition-colors cursor-pointer"
-                    >
-                      {isCodeCopied ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
+          {filteredExams.map((exam) => (
+            <tr key={exam.id} className="hover:bg-zinc-50 transition-colors">
+              <td className="py-3.5 px-4 font-mono font-bold text-zinc-500">#{exam.id}</td>
+              <td className="py-3.5 px-4">
+                <div className="font-bold text-zinc-950 uppercase tracking-tight">
+                  {exam.title}
+                </div>
+                {exam.description && (
+                  <div className="text-zinc-500 text-[11px] truncate max-w-xs mt-0.5">
+                    {exam.description}
                   </div>
-                </td>
-                <td className="py-3.5 px-4">
-                  <div className="font-bold text-zinc-950 uppercase tracking-tight">
-                    {exam.title}
-                  </div>
-                  {exam.description && (
-                    <div className="text-zinc-500 text-[11px] truncate max-w-xs mt-0.5">
-                      {exam.description}
-                    </div>
-                  )}
-                </td>
-                <td className="py-3.5 px-4 font-mono text-xs text-zinc-700">
-                  <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-300 font-semibold">
-                    {exam.subjectName || "Subject #" + exam.subjectId}
-                  </span>
-                </td>
-                <td className="py-3.5 px-4 font-mono text-xs">
-                  {exam.duration} mins
-                </td>
-                <td className="py-3.5 px-4 font-mono text-xs">
-                  <span className="font-bold text-zinc-900">{exam.totalMarks}</span>
-                  <span className="text-zinc-400"> / pass: </span>
-                  <span className="text-emerald-700 font-semibold">{exam.passingMarks}</span>
-                </td>
-                <td className="py-3.5 px-4">
-                  <Badge>{exam.status}</Badge>
-                </td>
-                <td className="py-3.5 px-4 text-right">
-                  <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      icon={Share2}
-                      onClick={(e) => handleCopyLink(exam.id, e)}
-                      title="Copy direct candidate link"
-                    >
-                      Link
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      icon={Users}
-                      onClick={() => handleOpenSubmissions(exam)}
-                      title="View candidate test submissions"
-                    >
-                      Submissions
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      icon={Eye}
-                      onClick={() => handleOpenView(exam)}
-                      title="View details & questions"
-                    >
-                      View
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="xs"
-                      icon={Edit2}
-                      onClick={() => handleOpenEdit(exam)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="xs"
-                      icon={Trash2}
-                      onClick={() => handleOpenDelete(exam)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+                )}
+              </td>
+              <td className="py-3.5 px-4 font-mono text-xs text-zinc-700">
+                <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-300 font-semibold">
+                  {exam.subjectName || "Subject #" + exam.subjectId}
+                </span>
+              </td>
+              <td className="py-3.5 px-4 font-mono text-xs">
+                {exam.duration} mins
+              </td>
+              <td className="py-3.5 px-4 font-mono text-xs">
+                <span className="font-bold text-zinc-900">{exam.totalMarks}</span>
+                <span className="text-zinc-400"> / pass: </span>
+                <span className="text-emerald-700 font-semibold">{exam.passingMarks}</span>
+              </td>
+              <td className="py-3.5 px-4">
+                <Badge>{exam.status}</Badge>
+              </td>
+              <td className="py-3.5 px-4 text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={Eye}
+                    onClick={() => handleOpenView(exam)}
+                    title="View details & questions"
+                  >
+                    View
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={Edit2}
+                    onClick={() => handleOpenEdit(exam)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    icon={Trash2}
+                    onClick={() => handleOpenDelete(exam)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          ))}
         </Table>
       )}
 
-      {/* Create / Edit Modal */}
       <Modal
         isOpen={isCreateOpen || isEditOpen}
         onClose={() => {
@@ -486,7 +396,7 @@ const Exams = () => {
           setIsEditOpen(false);
         }}
         title={isCreateOpen ? "Create New Examination" : "Edit Examination"}
-        subtitle="Configure assessment metadata, duration, marks, and unique access code"
+        subtitle="Configure assessment metadata, duration, marks, and publishing state"
         maxWidth="max-w-2xl"
         footer={
           <>
@@ -517,7 +427,7 @@ const Exams = () => {
           <Input
             id="exam-title"
             label="Exam Title"
-            placeholder="e.g. Physics Midterm Examination"
+            placeholder="e.g. Java Mid Semester Assessment"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             error={formErrors.title}
@@ -528,7 +438,7 @@ const Exams = () => {
           <Textarea
             id="exam-desc"
             label="Description / Instructions"
-            placeholder="Brief instructions, prerequisites, or topics covered"
+            placeholder="Brief description and rules for students"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
@@ -591,126 +501,32 @@ const Exams = () => {
               required
             />
           </div>
-
-          <div className="pt-2 border-t border-zinc-100">
-            <Input
-              id="accessCode"
-              label="Custom Access Code (Optional)"
-              placeholder="e.g. PHY-2026 (Leave empty to auto-generate)"
-              value={formData.accessCode}
-              onChange={(e) => setFormData({ ...formData, accessCode: e.target.value.toUpperCase() })}
-              helperText="Students can enter this code in their candidate portal to quickly jump into this test."
-            />
-          </div>
         </form>
       </Modal>
 
-      {/* Candidate Submissions Modal */}
-      <Modal
-        isOpen={isSubmissionsOpen}
-        onClose={() => setIsSubmissionsOpen(false)}
-        title={`Candidate Submissions: ${currentExam?.title || "Exam"}`}
-        subtitle={`Access Code: ${currentExam?.accessCode || "#" + currentExam?.id} • Total Submissions: ${examSubmissions.length}`}
-        maxWidth="max-w-4xl"
-        footer={
-          <Button variant="secondary" onClick={() => setIsSubmissionsOpen(false)}>
-            Close
-          </Button>
-        }
-      >
-        {loadingSubmissions ? (
-          <Loader text="Loading candidate test submissions..." />
-        ) : examSubmissions.length === 0 ? (
-          <div className="py-12 text-center text-xs font-mono text-zinc-500 border border-zinc-200 p-8 bg-zinc-50">
-            No candidates have submitted this exam yet.
-            <div className="mt-3">
-              <span className="font-bold text-zinc-900">Share Access Code: </span>
-              <span className="font-mono bg-white border border-zinc-300 px-2 py-0.5">{currentExam?.accessCode}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <Table
-              headers={[
-                { label: "ID", className: "w-16" },
-                { label: "Candidate Name" },
-                { label: "Email" },
-                { label: "Score" },
-                { label: "Percentage" },
-                { label: "Status" },
-                { label: "Submission Time" },
-              ]}
-            >
-              {examSubmissions.map((sub) => {
-                const total = sub.totalMarks || currentExam?.totalMarks || 100;
-                const score = sub.score || 0;
-                const pct = total > 0 ? Math.round((score / total) * 100) : 0;
-                return (
-                  <tr key={sub.id} className="hover:bg-zinc-50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-zinc-500">#{sub.id}</td>
-                    <td className="py-3 px-4 font-semibold text-zinc-950">{sub.studentName}</td>
-                    <td className="py-3 px-4 font-mono text-xs text-zinc-600">{sub.studentEmail || "—"}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-zinc-950">
-                      {score} / {total}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-xs">{pct}%</td>
-                    <td className="py-3 px-4">
-                      {sub.passed ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5">
-                          <CheckCircle2 className="w-3 h-3" /> PASSED
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-rose-700 bg-rose-50 border border-rose-300 px-1.5 py-0.5">
-                          <XCircle className="w-3 h-3" /> FAILED
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px] text-zinc-500">
-                      {sub.endTime ? new Date(sub.endTime).toLocaleString() : sub.startTime ? new Date(sub.startTime).toLocaleString() : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </Table>
-          </div>
-        )}
-      </Modal>
-
-      {/* View Exam Modal */}
       <Modal
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
         title={currentExam?.title || "Exam Specification"}
-        subtitle={`Access Code: ${currentExam?.accessCode || "#" + currentExam?.id} • Subject: ${currentExam?.subjectName}`}
+        subtitle={`Exam #${currentExam?.id} • Subject: ${currentExam?.subjectName}`}
         maxWidth="max-w-3xl"
         footer={
-          <div className="flex items-center justify-between w-full">
-            <Button
-              variant="secondary"
-              icon={Share2}
-              onClick={(e) => handleCopyLink(currentExam?.id, e)}
-            >
-              Copy Candidate Link
-            </Button>
-            <Button variant="primary" onClick={() => setIsViewOpen(false)}>
-              Close
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={() => setIsViewOpen(false)}>
+            Close
+          </Button>
         }
       >
         {currentExam && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 bg-zinc-50 border border-zinc-200">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Access Code</span>
-                <span className="text-sm font-mono font-bold text-zinc-950 mt-1 block">
-                  {currentExam.accessCode || "N/A"}
-                </span>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase block">Status</span>
+                <Badge className="mt-1">{currentExam.status}</Badge>
               </div>
               <div className="p-3 bg-zinc-50 border border-zinc-200">
                 <span className="text-[10px] font-mono text-zinc-500 uppercase block">Duration</span>
                 <span className="text-sm font-mono font-bold text-zinc-950 mt-1 block">
-                  {currentExam.duration} Mins
+                  {currentExam.duration} Minutes
                 </span>
               </div>
               <div className="p-3 bg-zinc-50 border border-zinc-200">
@@ -729,7 +545,7 @@ const Exams = () => {
 
             <div>
               <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-600 mb-1">
-                Description / Instructions
+                Description
               </h4>
               <p className="text-xs text-zinc-800 bg-zinc-50 p-3 border border-zinc-200">
                 {currentExam.description || "No specific instructions provided."}
@@ -744,7 +560,7 @@ const Exams = () => {
               </div>
               {examLinkedQuestions.length === 0 ? (
                 <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 text-xs">
-                  No questions currently created under subject "{currentExam.subjectName}". Add questions to this subject in the Question Bank so students receive questions during the exam.
+                  No questions currently created under subject "{currentExam.subjectName}". Candidates will not receive any questions until questions are added to this subject in the Question Bank.
                 </div>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">

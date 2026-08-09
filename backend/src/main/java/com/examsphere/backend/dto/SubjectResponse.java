@@ -19,10 +19,4 @@ public class SubjectResponse {
 
     private String categoryName;
 
-    private Long createdById;
-
-    private String createdByName;
-
-    private Integer questionsCount;
-
 }

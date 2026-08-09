@@ -32,6 +32,4 @@ public class ExamRequest {
     @NotNull
     private Long subjectId;
 
-    private String accessCode;
-
 }

@@ -386,7 +386,12 @@ const LandingPage = () => {
           </div>
           <div className="flex items-center gap-6">
             <span>Online Examination Platform</span>
-            <span>Spring Boot + React Architecture</span>
+            <Link
+              to="/admin/login"
+              className="text-zinc-400 hover:text-amber-400 font-semibold transition-colors flex items-center gap-1"
+            >
+              <span>Admin Portal →</span>
+            </Link>
           </div>
         </div>
       </footer>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { getMyExams } from "../../services/examService";
+import { Link, useNavigate } from "react-router-dom";
+import { getAllExams } from "../../services/examService";
 import { getQuestions } from "../../services/questionService";
 import { getSubjects } from "../../services/subjectService";
 import { getCategories } from "../../services/categoryService";
-import { getAdminExamAttempts } from "../../services/attemptService";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import PageHeader from "../../components/ui/PageHeader";
 import StatCard from "../../components/ui/StatCard";
 import Card from "../../components/ui/Card";
@@ -22,39 +22,47 @@ import {
   Plus,
   ArrowRight,
   ShieldCheck,
-  Users,
-  Key,
-  CheckCircle2,
-  XCircle,
+  LogOut,
+  Mail,
+  User,
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const toast = useToast();
+  const navigate = useNavigate();
+
   const [exams, setExams] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const adminName = user?.fullName || "System Administrator";
+  const adminEmail = user?.email || "admin@examsphere.com";
+
+  const handleLogout = () => {
+    logout();
+    toast.info("Logged out successfully");
+    navigate("/admin/login", { replace: true });
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
     setError(false);
     try {
-      const [examsData, questionsData, subjectsData, categoriesData, attemptsData] = await Promise.all([
-        getMyExams().catch(() => []),
+      const [examsData, questionsData, subjectsData, categoriesData] = await Promise.all([
+        getAllExams().catch(() => []),
         getQuestions().catch(() => []),
         getSubjects().catch(() => []),
         getCategories().catch(() => []),
-        getAdminExamAttempts().catch(() => []),
       ]);
 
       setExams(examsData || []);
       setQuestions(questionsData || []);
       setSubjects(subjectsData || []);
       setCategories(categoriesData || []);
-      setAttempts(attemptsData || []);
     } catch (err) {
       setError(true);
     } finally {
@@ -82,69 +90,95 @@ const Dashboard = () => {
 
   const publishedExamsCount = exams.filter((e) => e.status === "PUBLISHED").length;
   const recentExams = [...exams].reverse().slice(0, 5);
-  const recentAttempts = [...attempts].reverse().slice(0, 5);
 
   return (
     <div className="space-y-8">
-      {/* Personalized Multi-Admin Workspace Banner */}
-      <div className="p-5 bg-white border border-zinc-900 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start sm:items-center gap-3.5">
-          <div className="w-10 h-10 bg-zinc-950 text-white flex items-center justify-center font-bold text-sm shrink-0">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold uppercase tracking-tight text-zinc-950">
-                {user?.fullName || "Administrator"} Workspace
-              </h2>
-              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300">
-                Isolated Environment
-              </span>
+      {/* Welcome Banner with Admin Info & Quick Logout */}
+      <div
+        style={{ borderRadius: "0px" }}
+        className="bg-zinc-950 text-white p-6 sm:p-8 border border-zinc-800 shadow-xl relative overflow-hidden"
+      >
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-zinc-900 border border-zinc-700 text-[11px] font-mono uppercase tracking-widest text-amber-400">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Verified Administrator Session</span>
             </div>
-            <p className="text-xs text-zinc-600 mt-0.5">
-              Admin Account: <span className="font-mono text-zinc-900 font-semibold">{user?.email || "Current Admin"}</span> • Exams created here are private and isolated to your portal.
-            </p>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
+                Welcome, Admin
+              </h1>
+              <p className="text-zinc-400 text-xs sm:text-sm mt-1">
+                You have full administrative control over examination creation, subject modules, and question banks.
+              </p>
+            </div>
+            {/* Admin Details */}
+            <div className="flex flex-wrap items-center gap-4 pt-1 text-xs font-mono text-zinc-300">
+              <div className="flex items-center gap-1.5 bg-zinc-900 px-3 py-1.5 border border-zinc-800">
+                <User className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="text-zinc-400">Admin Name:</span>
+                <span className="font-bold text-white">{adminName}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-zinc-900 px-3 py-1.5 border border-zinc-800">
+                <Mail className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="text-zinc-400">Email:</span>
+                <span className="font-bold text-white">{adminEmail}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-zinc-900 px-3 py-1.5 border border-zinc-800">
+                <span className="text-zinc-400">Role:</span>
+                <span className="font-bold text-emerald-400">ADMIN</span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 self-start md:self-center">
-          <Link to="/admin/exams">
-            <Button variant="primary" size="sm" icon={Plus}>
-              New Exam
-            </Button>
-          </Link>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <Link to="/admin/exams">
+              <Button variant="primary" size="md" icon={Plus} className="font-bold">
+                Create Exam
+              </Button>
+            </Link>
+            <button
+              onClick={handleLogout}
+              style={{ borderRadius: "0px" }}
+              className="flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase font-bold text-rose-300 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-800/80 transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <PageHeader
-        title="Admin Overview & Metrics"
-        subtitle="Live status of your isolated question banks, created exams, and candidate test submissions."
+        title="Administrative Overview"
+        subtitle="Live platform metrics and academic resource distribution"
         breadcrumbs={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Dashboard" }]}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="My Exams"
+          title="Total Exams"
           value={exams.length}
           subtitle={`${publishedExamsCount} currently published`}
           icon={FileCheck}
         />
         <StatCard
-          title="Question Bank"
+          title="Total Questions"
           value={questions.length}
-          subtitle="Questions in your catalogue"
+          subtitle="Across all subjects"
           icon={HelpCircle}
         />
         <StatCard
-          title="Subjects & Topics"
+          title="Total Subjects"
           value={subjects.length}
-          subtitle="Configured disciplines"
+          subtitle="Active academic modules"
           icon={BookOpen}
         />
         <StatCard
-          title="Candidate Submissions"
-          value={attempts.length}
-          subtitle="Tests completed by students"
-          icon={Users}
+          title="Categories"
+          value={categories.length}
+          subtitle="Domain classifications"
+          icon={Layers}
         />
       </div>
 
@@ -184,110 +218,57 @@ const Dashboard = () => {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Exams Section */}
-        <Card
-          title="My Examinations"
-          subtitle="Your created tests and unique access codes"
-          action={
-            <Link to="/admin/exams">
-              <Button variant="ghost" size="sm">
-                View All ({exams.length}) <ArrowRight className="w-3.5 h-3.5 ml-1 inline" />
-              </Button>
-            </Link>
-          }
-        >
-          {recentExams.length === 0 ? (
-            <div className="py-8 text-center text-xs font-mono text-zinc-500">
-              No exams created yet. Click "Create Exam" to schedule your first test.
-            </div>
-          ) : (
-            <Table
-              headers={[
-                { label: "Code / ID", className: "w-28" },
-                { label: "Exam Title" },
-                { label: "Subject" },
-                { label: "Status" },
-                { label: "Action", className: "text-right" },
-              ]}
-            >
-              {recentExams.map((exam) => (
-                <tr key={exam.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="py-3 px-4">
-                    <span className="text-[11px] font-mono font-bold bg-zinc-100 border border-zinc-300 px-1.5 py-0.5 block text-center">
-                      {exam.accessCode || `#${exam.id}`}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-semibold text-zinc-950 truncate max-w-[160px]">{exam.title}</td>
-                  <td className="py-3 px-4 font-mono text-xs text-zinc-600 truncate max-w-[120px]">{exam.subjectName || "—"}</td>
-                  <td className="py-3 px-4">
-                    <Badge size="xs">{exam.status}</Badge>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <Link to="/admin/exams">
-                      <Button variant="secondary" size="xs">
-                        Manage
-                      </Button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          )}
-        </Card>
-
-        {/* Recent Candidate Submissions Section */}
-        <Card
-          title="Candidate Submissions"
-          subtitle="Latest student attempts on your exams"
-          action={
-            <span className="text-xs font-mono text-zinc-500">
-              Total: {attempts.length}
-            </span>
-          }
-        >
-          {recentAttempts.length === 0 ? (
-            <div className="py-8 text-center text-xs font-mono text-zinc-500">
-              No candidate submissions recorded yet. Share your exam access code with students to begin receiving results.
-            </div>
-          ) : (
-            <Table
-              headers={[
-                { label: "Student" },
-                { label: "Exam" },
-                { label: "Score" },
-                { label: "Result" },
-              ]}
-            >
-              {recentAttempts.map((attempt) => (
-                <tr key={attempt.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="py-3 px-4">
-                    <p className="font-semibold text-xs text-zinc-950">{attempt.studentName}</p>
-                    <p className="text-[10px] font-mono text-zinc-500">{attempt.studentEmail || "Student"}</p>
-                  </td>
-                  <td className="py-3 px-4 text-xs font-medium text-zinc-800 truncate max-w-[140px]">
-                    {attempt.examTitle}
-                  </td>
-                  <td className="py-3 px-4 font-mono font-bold text-xs">
-                    {attempt.score ?? 0} / {attempt.totalMarks || 100}
-                  </td>
-                  <td className="py-3 px-4">
-                    {attempt.passed ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5">
-                        <CheckCircle2 className="w-3 h-3" /> PASSED
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5">
-                        <XCircle className="w-3 h-3" /> FAILED
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          )}
-        </Card>
-      </div>
+      <Card
+        title="Recent Examinations"
+        subtitle="Latest exams configured on the platform"
+        action={
+          <Link to="/admin/exams">
+            <Button variant="ghost" size="sm">
+              View All ({exams.length}) <ArrowRight className="w-3.5 h-3.5 ml-1 inline" />
+            </Button>
+          </Link>
+        }
+      >
+        {recentExams.length === 0 ? (
+          <div className="py-8 text-center text-xs font-mono text-zinc-500">
+            No exams created yet. Click "Create Exam" to schedule your first test.
+          </div>
+        ) : (
+          <Table
+            headers={[
+              { label: "ID", className: "w-16" },
+              { label: "Exam Title" },
+              { label: "Subject" },
+              { label: "Duration" },
+              { label: "Marks (Total/Pass)" },
+              { label: "Status" },
+              { label: "Action", className: "text-right" },
+            ]}
+          >
+            {recentExams.map((exam) => (
+              <tr key={exam.id} className="hover:bg-zinc-50 transition-colors">
+                <td className="py-3 px-4 font-mono font-bold text-zinc-500">#{exam.id}</td>
+                <td className="py-3 px-4 font-semibold text-zinc-950">{exam.title}</td>
+                <td className="py-3 px-4 font-mono text-zinc-600">{exam.subjectName || "—"}</td>
+                <td className="py-3 px-4 font-mono">{exam.duration} mins</td>
+                <td className="py-3 px-4 font-mono">
+                  {exam.totalMarks} / {exam.passingMarks}
+                </td>
+                <td className="py-3 px-4">
+                  <Badge>{exam.status}</Badge>
+                </td>
+                <td className="py-3 px-4 text-right">
+                  <Link to="/admin/exams">
+                    <Button variant="secondary" size="sm">
+                      Manage
+                    </Button>
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Card>
     </div>
   );
 };

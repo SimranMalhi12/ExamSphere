@@ -4,14 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "../pages/landing/LandingPage";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
-
-import SuperAdminLayout from "../layouts/SuperAdminLayout";
-import SuperAdminDashboard from "../pages/superadmin/Dashboard";
-import SuperAdminAdmins from "../pages/superadmin/Admins";
-import SuperAdminAllExams from "../pages/superadmin/AllExams";
-import SuperAdminStudents from "../pages/superadmin/Students";
-import SuperAdminSubmissions from "../pages/superadmin/Submissions";
-import SuperAdminProfile from "../pages/superadmin/Profile";
+import AdminLogin from "../pages/admin/AdminLogin";
 
 import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboard from "../pages/admin/Dashboard";
@@ -37,27 +30,10 @@ const AppRoutes = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
 
-      {/* Super Admin Routes */}
       <Route
-        path="/super-admin"
-        element={
-          <ProtectedRoute allowedRole="SUPER_ADMIN">
-            <SuperAdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to="/super-admin/dashboard" replace />} />
-        <Route path="dashboard" element={<SuperAdminDashboard />} />
-        <Route path="admins" element={<SuperAdminAdmins />} />
-        <Route path="exams" element={<SuperAdminAllExams />} />
-        <Route path="students" element={<SuperAdminStudents />} />
-        <Route path="submissions" element={<SuperAdminSubmissions />} />
-        <Route path="profile" element={<SuperAdminProfile />} />
-      </Route>
 
-      {/* Admin Routes */}
-      <Route
         path="/admin"
         element={
           <ProtectedRoute allowedRole="ADMIN">
@@ -74,7 +50,6 @@ const AppRoutes = () => {
         <Route path="profile" element={<AdminProfile />} />
       </Route>
 
-      {/* Student Routes */}
       <Route
         path="/student"
         element={

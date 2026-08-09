@@ -42,13 +42,6 @@ public class QuestionController {
         return ResponseEntity.ok(questionService.getQuestionById(id));
     }
 
-    // Get Questions By Subject Id
-    @GetMapping("/subject/{subjectId}")
-    public ResponseEntity<List<QuestionResponse>> getQuestionsBySubjectId(@PathVariable Long subjectId) {
-
-        return ResponseEntity.ok(questionService.getQuestionsBySubjectId(subjectId));
-    }
-
     // Update Question
     @PutMapping("/{id}")
     public ResponseEntity<QuestionResponse> updateQuestion(

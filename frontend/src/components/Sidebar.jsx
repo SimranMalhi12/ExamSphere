@@ -11,8 +11,6 @@ import {
   LogOut,
   X,
   ClipboardList,
-  ShieldCheck,
-  Users,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -27,15 +25,6 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
     toast.info("Logged out successfully");
     navigate("/login");
   };
-
-  const superAdminLinks = [
-    { to: "/super-admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/super-admin/admins", label: "Admins & Permissions", icon: ShieldCheck },
-    { to: "/super-admin/exams", label: "Global Exams", icon: FileCheck },
-    { to: "/super-admin/students", label: "Candidates", icon: Users },
-    { to: "/super-admin/submissions", label: "Submissions Log", icon: ClipboardList },
-    { to: "/super-admin/profile", label: "Profile", icon: User },
-  ];
 
   const adminLinks = [
     { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -54,16 +43,7 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
     { to: "/student/profile", label: "Profile", icon: User },
   ];
 
-  let links = studentLinks;
-  let portalTitle = "Student Portal";
-
-  if (role === "SUPER_ADMIN") {
-    links = superAdminLinks;
-    portalTitle = "Super Governance";
-  } else if (role === "ADMIN") {
-    links = adminLinks;
-    portalTitle = "Admin Portal";
-  }
+  const links = role === "ADMIN" ? adminLinks : studentLinks;
 
   return (
     <>
@@ -91,7 +71,7 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
                   ExamSphere
                 </span>
                 <span className="block text-[10px] font-mono text-zinc-400 uppercase -mt-0.5">
-                  {portalTitle}
+                  {role === "ADMIN" ? "Admin Portal" : "Student Portal"}
                 </span>
               </div>
             </div>
@@ -134,9 +114,9 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
         <div className="p-4 border-t border-zinc-800">
           <div className="p-3 bg-zinc-900 border border-zinc-800 mb-3" style={{ borderRadius: "0px" }}>
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 shrink-0 ${role === "SUPER_ADMIN" ? "bg-amber-400" : "bg-emerald-500"}`} />
+              <div className="w-2 h-2 bg-emerald-500 shrink-0" />
               <span className="text-[11px] font-mono text-zinc-300 truncate">
-                {user?.email || "user@examsphere.com"}
+                {user?.email || (role === "ADMIN" ? "admin@examsphere.com" : "student@examsphere.com")}
               </span>
             </div>
           </div>

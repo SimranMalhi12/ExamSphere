@@ -19,9 +19,7 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (role === "SUPER_ADMIN") {
-        navigate("/super-admin/dashboard", { replace: true });
-      } else if (role === "ADMIN") {
+      if (role === "ADMIN") {
         navigate("/admin/dashboard", { replace: true });
       } else {
         navigate("/student/dashboard", { replace: true });
@@ -46,31 +44,20 @@ const Login = () => {
         password: password.trim(),
       });
 
-      const rawRole = (response.role || "STUDENT").toUpperCase();
-      let userRole = "STUDENT";
-      if (rawRole.includes("SUPER")) {
-        userRole = "SUPER_ADMIN";
-      } else if (rawRole.includes("ADMIN")) {
-        userRole = "ADMIN";
-      }
+      const rawRole = response.role || "STUDENT";
+      const userRole = rawRole.toUpperCase().includes("ADMIN") ? "ADMIN" : "STUDENT";
 
       const userPayload = {
-        fullName: response.fullName || (userRole === "SUPER_ADMIN" ? "Super Administrator" : userRole === "ADMIN" ? "Administrator" : "Student"),
+        fullName: response.fullName || (userRole === "ADMIN" ? "Administrator" : "Student"),
         email: email.trim(),
         role: userRole,
         id: response.id || 1,
-        canCreateExams: response.canCreateExams ?? true,
-        canManageQuestions: response.canManageQuestions ?? true,
-        canManageSubjects: response.canManageSubjects ?? true,
-        canViewSubmissions: response.canViewSubmissions ?? true,
       };
 
       login(response.token, userRole, userPayload);
       toast.success(`Welcome back, ${userPayload.fullName}!`);
 
-      if (userRole === "SUPER_ADMIN") {
-        navigate("/super-admin/dashboard");
-      } else if (userRole === "ADMIN") {
+      if (userRole === "ADMIN") {
         navigate("/admin/dashboard");
       } else {
         navigate("/student/dashboard");
@@ -174,12 +161,19 @@ const Login = () => {
           </div>
         </div>
 
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 flex items-center justify-center gap-4 text-xs font-mono text-zinc-400">
           <Link
             to="/"
-            className="text-xs font-mono text-zinc-400 hover:text-white uppercase tracking-widest transition-colors"
+            className="hover:text-white uppercase tracking-widest transition-colors"
           >
-            ← Back to Homepage
+            ← Homepage
+          </Link>
+          <span>•</span>
+          <Link
+            to="/admin/login"
+            className="hover:text-amber-400 font-semibold uppercase tracking-widest transition-colors"
+          >
+            Admin Portal →
           </Link>
         </div>
       </div>

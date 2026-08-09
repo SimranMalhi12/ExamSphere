@@ -5,11 +5,6 @@ export const getQuestions = async () => {
   return response.data;
 };
 
-export const getQuestionsBySubject = async (subjectId) => {
-  const response = await api.get(`/questions/subject/${subjectId}`);
-  return response.data;
-};
-
 export const getQuestionById = async (id) => {
   const response = await api.get(`/questions/${id}`);
   return response.data;

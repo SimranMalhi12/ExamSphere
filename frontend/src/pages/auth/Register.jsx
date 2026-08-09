@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { Input } from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { User, Mail, Lock, GraduationCap } from "lucide-react";
+import { User, Mail, Lock, ShieldCheck, GraduationCap } from "lucide-react";
 
 const Register = () => {
   const { isAuthenticated, role } = useAuth();
@@ -16,14 +16,13 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState("STUDENT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (role === "SUPER_ADMIN") {
-        navigate("/super-admin/dashboard", { replace: true });
-      } else if (role === "ADMIN") {
+      if (role === "ADMIN") {
         navigate("/admin/dashboard", { replace: true });
       } else {
         navigate("/student/dashboard", { replace: true });
@@ -57,7 +56,7 @@ const Register = () => {
         fullName: fullName.trim(),
         email: email.trim(),
         password,
-        role: "STUDENT",
+        role: selectedRole,
       });
 
       if (typeof response === "string" && response.toLowerCase().includes("exists")) {
@@ -66,7 +65,11 @@ const Register = () => {
         return;
       }
 
-      toast.success("Student account created successfully! Please sign in.");
+      toast.success(
+        selectedRole === "ADMIN"
+          ? "Administrator account created successfully! Please sign in."
+          : "Student account created successfully! Please sign in."
+      );
       navigate("/login");
     } catch (err) {
       const msg =
@@ -93,7 +96,7 @@ const Register = () => {
             </span>
           </Link>
           <p className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-            Candidate Account Registration
+            Account Registration Portal
           </p>
         </div>
 
@@ -102,16 +105,11 @@ const Register = () => {
           className="bg-white border border-zinc-900 shadow-2xl p-8"
         >
           <div className="border-b border-zinc-200 pb-4 mb-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-extrabold uppercase tracking-tight text-zinc-950">
-                Student Sign Up
-              </h2>
-              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-zinc-100 border border-zinc-300 px-2 py-0.5 uppercase text-zinc-800">
-                <GraduationCap className="w-3.5 h-3.5" /> Candidate
-              </span>
-            </div>
+            <h2 className="text-xl font-extrabold uppercase tracking-tight text-zinc-950">
+              Create Account
+            </h2>
             <p className="text-xs text-zinc-500 mt-1">
-              Create a student account to take examinations and track your test performance.
+              Select your account type and fill in your credentials.
             </p>
           </div>
 
@@ -123,6 +121,18 @@ const Register = () => {
               {error}
             </div>
           )}
+
+          <div className="mb-5 p-3 bg-zinc-50 border border-zinc-200">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-zinc-900" />
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-900">
+                Candidate / Student Registration
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-1 font-mono">
+              Creates a student profile with access to live exams, test history, and scorecards.
+            </p>
+          </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
             <Input
@@ -177,7 +187,7 @@ const Register = () => {
                 variant="primary"
                 size="lg"
                 loading={loading}
-                className="w-full font-bold"
+                className="w-full font-bold uppercase tracking-wider"
               >
                 Create Candidate Account
               </Button>
@@ -185,7 +195,7 @@ const Register = () => {
           </form>
 
           <div className="mt-6 pt-5 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-500">
-            <span>Already registered?</span>
+            <span>Already have an account?</span>
             <Link
               to="/login"
               className="font-bold text-zinc-950 hover:underline uppercase tracking-wider text-[11px]"
@@ -193,14 +203,31 @@ const Register = () => {
               Sign In →
             </Link>
           </div>
+
+          <div className="mt-4 p-3 bg-zinc-900 text-white flex items-center justify-between text-xs font-mono">
+            <span className="text-zinc-400">Are you an Admin?</span>
+            <Link
+              to="/admin/login"
+              className="text-amber-400 font-bold hover:underline uppercase tracking-wider"
+            >
+              Admin Portal →
+            </Link>
+          </div>
         </div>
 
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 flex items-center justify-center gap-4 text-xs font-mono text-zinc-400">
           <Link
             to="/"
-            className="text-xs font-mono text-zinc-400 hover:text-white uppercase tracking-widest transition-colors"
+            className="hover:text-white uppercase tracking-widest transition-colors"
           >
-            ← Back to Homepage
+            ← Homepage
+          </Link>
+          <span>•</span>
+          <Link
+            to="/login"
+            className="hover:text-white uppercase tracking-widest transition-colors"
+          >
+            Sign In
           </Link>
         </div>
       </div>

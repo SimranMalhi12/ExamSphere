@@ -1,15 +1,9 @@
 package com.examsphere.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
 
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class User {
 
     @Id
@@ -29,25 +23,8 @@ public class User {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @Column(name = "can_create_exams")
-    @Builder.Default
-    private Boolean canCreateExams = true;
-
-    @Column(name = "can_manage_questions")
-    @Builder.Default
-    private Boolean canManageQuestions = true;
-
-    @Column(name = "can_manage_subjects")
-    @Builder.Default
-    private Boolean canManageSubjects = true;
-
-    @Column(name = "can_view_submissions")
-    @Builder.Default
-    private Boolean canViewSubmissions = true;
-
-    @Column(name = "is_active")
-    @Builder.Default
-    private Boolean isActive = true;
+    public User() {
+    }
 
     public User(Long id, String fullName, String email, String password, Role role) {
         this.id = id;
@@ -55,10 +32,45 @@ public class User {
         this.email = email;
         this.password = password;
         this.role = role;
-        this.canCreateExams = true;
-        this.canManageQuestions = true;
-        this.canManageSubjects = true;
-        this.canViewSubmissions = true;
-        this.isActive = true;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

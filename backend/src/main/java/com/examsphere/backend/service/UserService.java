@@ -1,15 +1,18 @@
 package com.examsphere.backend.service;
 
+import com.examsphere.backend.dto.LoginRequest;
 import com.examsphere.backend.dto.RegisterRequest;
-import com.examsphere.backend.entity.User;
 import com.examsphere.backend.entity.Role;
+import com.examsphere.backend.entity.User;
+import com.examsphere.backend.exception.DuplicateResourceException;
 import com.examsphere.backend.repository.RoleRepository;
 import com.examsphere.backend.repository.UserRepository;
-import com.examsphere.backend.security.JwtService;
-import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import com.examsphere.backend.dto.LoginRequest;
 import com.examsphere.backend.response.AuthenticationResponse;
+import com.examsphere.backend.security.JwtService;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
@@ -29,7 +32,7 @@ public class UserService {
     public String register(RegisterRequest request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return "Email already exists";
+            throw new DuplicateResourceException("Email already exists: " + request.getEmail());
         }
 
         User user = new User();
@@ -37,20 +40,12 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Public self-registration is strictly for STUDENT accounts
+        // Public registration always assigns regular STUDENT/USER role to prevent privilege escalation
         Role assignedRole = roleRepository.findByName("STUDENT")
-                .orElseGet(() -> {
-                    Role newRole = new Role(null, "STUDENT");
-                    return roleRepository.save(newRole);
-                });
+                .orElseGet(() -> roleRepository.findByName("USER")
+                        .orElseGet(() -> roleRepository.save(new Role(null, "STUDENT"))));
 
         user.setRole(assignedRole);
-        user.setCanCreateExams(false);
-        user.setCanManageQuestions(false);
-        user.setCanManageSubjects(false);
-        user.setCanViewSubmissions(false);
-        user.setIsActive(true);
-
         userRepository.save(user);
 
         return "Registration Successful";
@@ -59,29 +54,46 @@ public class UserService {
     public AuthenticationResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid Email"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid Password");
+            throw new BadCredentialsException("Invalid email or password");
         }
 
-        if (user.getIsActive() != null && !user.getIsActive()) {
-            throw new RuntimeException("Account has been suspended by the Super Administrator. Please contact support.");
+        String roleName = user.getRole() != null ? user.getRole().getName() : "STUDENT";
+        String token = jwtService.generateToken(user.getEmail(), roleName, user.getId());
+
+        return new AuthenticationResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                user.getFullName(),
+                roleName
+        );
+    }
+
+    public AuthenticationResponse adminLogin(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Invalid email or password");
         }
 
-        String token = jwtService.generateToken(user.getEmail());
+        // Strict Backend Role Check: Only ADMIN role is permitted
+        if (user.getRole() == null || !user.getRole().getName().equalsIgnoreCase("ADMIN")) {
+            throw new AccessDeniedException("Access denied: User does not have administrator privileges");
+        }
 
-        return AuthenticationResponse.builder()
-                .token(token)
-                .id(user.getId())
-                .fullName(user.getFullName())
-                .email(user.getEmail())
-                .role(user.getRole() != null ? user.getRole().getName() : "STUDENT")
-                .canCreateExams(user.getCanCreateExams() != null ? user.getCanCreateExams() : true)
-                .canManageQuestions(user.getCanManageQuestions() != null ? user.getCanManageQuestions() : true)
-                .canManageSubjects(user.getCanManageSubjects() != null ? user.getCanManageSubjects() : true)
-                .canViewSubmissions(user.getCanViewSubmissions() != null ? user.getCanViewSubmissions() : true)
-                .isActive(user.getIsActive() != null ? user.getIsActive() : true)
-                .build();
+        String token = jwtService.generateToken(user.getEmail(), "ADMIN", user.getId());
+
+        return new AuthenticationResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                user.getFullName(),
+                "ADMIN"
+        );
     }
 }

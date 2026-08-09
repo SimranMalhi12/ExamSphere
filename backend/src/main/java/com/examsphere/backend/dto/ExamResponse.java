@@ -28,14 +28,4 @@ public class ExamResponse {
 
     private String subjectName;
 
-    private String accessCode;
-
-    private Long createdById;
-
-    private String createdByName;
-
-    private String createdByEmail;
-
-    private Integer questionsCount;
-
 }

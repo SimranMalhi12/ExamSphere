@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getExamById } from "../../services/examService";
-import { getQuestions, getQuestionsBySubject } from "../../services/questionService";
+import { getQuestions } from "../../services/questionService";
 import {
   startExamAttempt,
   submitAnswer,
@@ -54,28 +54,18 @@ const TakeExam = () => {
     setError(false);
     try {
       const examData = await getExamById(examId);
-      let examQuestions = [];
+      const allQuestions = await getQuestions();
 
-      if (examData.subjectId) {
-        try {
-          examQuestions = await getQuestionsBySubject(examData.subjectId);
-        } catch (e) {
-          // fallback to all questions
-        }
-      }
+      let examQuestions = allQuestions.filter(
+        (q) => q.subjectId === examData.subjectId
+      );
 
-      if (!examQuestions || examQuestions.length === 0) {
-        const allQuestions = await getQuestions().catch(() => []);
-        examQuestions = allQuestions.filter(
-          (q) => q.subjectId === examData.subjectId
-        );
-        if (examQuestions.length === 0 && allQuestions.length > 0) {
-          examQuestions = allQuestions;
-        }
+      if (examQuestions.length === 0 && allQuestions.length > 0) {
+        examQuestions = allQuestions;
       }
 
       setExam(examData);
-      setQuestions(examQuestions || []);
+      setQuestions(examQuestions);
       setTimeLeft((examData.duration || 60) * 60);
     } catch (err) {
       setError(true);

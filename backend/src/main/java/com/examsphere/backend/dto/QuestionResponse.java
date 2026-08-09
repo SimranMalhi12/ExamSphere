@@ -32,8 +32,4 @@ public class QuestionResponse {
 
     private String subjectName;
 
-    private Long createdById;
-
-    private String createdByName;
-
 }

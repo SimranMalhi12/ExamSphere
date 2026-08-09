@@ -5,18 +5,8 @@ export const getAllExams = async () => {
   return response.data;
 };
 
-export const getMyExams = async () => {
-  const response = await api.get("/exams/my-exams");
-  return response.data;
-};
-
 export const getExamById = async (id) => {
   const response = await api.get(`/exams/${id}`);
-  return response.data;
-};
-
-export const getExamByAccessCode = async (accessCode) => {
-  const response = await api.get(`/exams/code/${accessCode}`);
   return response.data;
 };
 
