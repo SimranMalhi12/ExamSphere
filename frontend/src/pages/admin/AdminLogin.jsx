@@ -19,7 +19,9 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (role === "ADMIN") {
+      if (role === "SUPER_ADMIN") {
+        navigate("/super-admin/dashboard", { replace: true });
+      } else if (role === "ADMIN") {
         navigate("/admin/dashboard", { replace: true });
       } else {
         navigate("/student/dashboard", { replace: true });
@@ -44,23 +46,32 @@ const AdminLogin = () => {
         password: password.trim(),
       });
 
-      // Verify the backend returned ADMIN role
-      if (response.role !== "ADMIN") {
+      const userRole = response.role;
+      if (userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
         setError("Access Denied: Account does not possess Administrator privileges.");
         toast.error("Access Denied: Administrator role required.");
         return;
       }
 
       const userPayload = {
-        fullName: response.fullName || "System Administrator",
+        fullName: response.fullName || (userRole === "SUPER_ADMIN" ? "Super Administrator" : "System Administrator"),
         email: response.email || email.trim(),
-        role: "ADMIN",
+        role: userRole,
         id: response.userId || 1,
+        canCreateExams: response.canCreateExams !== false,
+        canManageQuestions: response.canManageQuestions !== false,
+        canManageSubjects: response.canManageSubjects !== false,
+        canViewSubmissions: response.canViewSubmissions !== false,
       };
 
-      login(response.token, "ADMIN", userPayload);
-      toast.success(`Authenticated as Admin. Welcome, ${userPayload.fullName}!`);
-      navigate("/admin/dashboard", { replace: true });
+      login(response.token, userRole, userPayload);
+      toast.success(`Authenticated as ${userRole === "SUPER_ADMIN" ? "Super Admin" : "Admin"}. Welcome, ${userPayload.fullName}!`);
+      
+      if (userRole === "SUPER_ADMIN") {
+        navigate("/super-admin/dashboard", { replace: true });
+      } else {
+        navigate("/admin/dashboard", { replace: true });
+      }
     } catch (err) {
       const status = err.response?.status;
       let errorMsg = "Authentication failed. Please verify administrator credentials.";

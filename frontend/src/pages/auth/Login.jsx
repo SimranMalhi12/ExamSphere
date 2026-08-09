@@ -19,7 +19,9 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (role === "ADMIN") {
+      if (role === "SUPER_ADMIN") {
+        navigate("/super-admin/dashboard", { replace: true });
+      } else if (role === "ADMIN") {
         navigate("/admin/dashboard", { replace: true });
       } else {
         navigate("/student/dashboard", { replace: true });
@@ -44,20 +46,25 @@ const Login = () => {
         password: password.trim(),
       });
 
-      const rawRole = response.role || "STUDENT";
-      const userRole = rawRole.toUpperCase().includes("ADMIN") ? "ADMIN" : "STUDENT";
+      const userRole = response.role || "STUDENT";
 
       const userPayload = {
-        fullName: response.fullName || (userRole === "ADMIN" ? "Administrator" : "Student"),
+        fullName: response.fullName || (userRole === "SUPER_ADMIN" ? "Super Administrator" : userRole === "ADMIN" ? "Administrator" : "Student"),
         email: email.trim(),
         role: userRole,
-        id: response.id || 1,
+        id: response.userId || response.id || 1,
+        canCreateExams: response.canCreateExams !== false,
+        canManageQuestions: response.canManageQuestions !== false,
+        canManageSubjects: response.canManageSubjects !== false,
+        canViewSubmissions: response.canViewSubmissions !== false,
       };
 
       login(response.token, userRole, userPayload);
       toast.success(`Welcome back, ${userPayload.fullName}!`);
 
-      if (userRole === "ADMIN") {
+      if (userRole === "SUPER_ADMIN") {
+        navigate("/super-admin/dashboard");
+      } else if (userRole === "ADMIN") {
         navigate("/admin/dashboard");
       } else {
         navigate("/student/dashboard");

@@ -7,6 +7,7 @@ import com.examsphere.backend.entity.Subject;
 import com.examsphere.backend.exception.ResourceNotFoundException;
 import com.examsphere.backend.repository.ExamRepository;
 import com.examsphere.backend.repository.SubjectRepository;
+import com.examsphere.backend.security.PermissionValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +19,11 @@ public class ExamService {
 
     private final ExamRepository examRepository;
     private final SubjectRepository subjectRepository;
+    private final PermissionValidator permissionValidator;
 
     // Create Exam
     public ExamResponse createExam(ExamRequest request) {
+        permissionValidator.validateCanCreateExams();
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
@@ -42,9 +45,6 @@ public class ExamService {
 
     // Get All Exams
     public List<ExamResponse> getAllExams() {
-
-        System.out.println("Exam Count = " + examRepository.count());
-
         return examRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -53,7 +53,6 @@ public class ExamService {
 
     // Get Exam By Id
     public ExamResponse getExamById(Long id) {
-
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
@@ -62,6 +61,7 @@ public class ExamService {
 
     // Update Exam
     public ExamResponse updateExam(Long id, ExamRequest request) {
+        permissionValidator.validateCanCreateExams();
 
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
@@ -84,6 +84,7 @@ public class ExamService {
 
     // Delete Exam
     public String deleteExam(Long id) {
+        permissionValidator.validateCanCreateExams();
 
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
@@ -95,7 +96,6 @@ public class ExamService {
 
     // Helper Method
     private ExamResponse mapToResponse(Exam exam) {
-
         return ExamResponse.builder()
                 .id(exam.getId())
                 .title(exam.getTitle())

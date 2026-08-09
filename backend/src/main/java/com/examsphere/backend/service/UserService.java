@@ -11,6 +11,7 @@ import com.examsphere.backend.response.AuthenticationResponse;
 import com.examsphere.backend.security.JwtService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +31,6 @@ public class UserService {
     }
 
     public String register(RegisterRequest request) {
-
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new DuplicateResourceException("Email already exists: " + request.getEmail());
         }
@@ -40,40 +40,52 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Public registration always assigns regular STUDENT/USER role to prevent privilege escalation
+        // Public registration always assigns regular STUDENT role
         Role assignedRole = roleRepository.findByName("STUDENT")
-                .orElseGet(() -> roleRepository.findByName("USER")
-                        .orElseGet(() -> roleRepository.save(new Role(null, "STUDENT"))));
+                .orElseGet(() -> roleRepository.save(new Role(null, "STUDENT")));
 
         user.setRole(assignedRole);
+        user.setCanCreateExams(false);
+        user.setCanManageQuestions(false);
+        user.setCanManageSubjects(false);
+        user.setCanViewSubmissions(false);
+        user.setIsActive(true);
+
         userRepository.save(user);
 
         return "Registration Successful";
     }
 
     public AuthenticationResponse login(LoginRequest request) {
-
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Invalid email or password");
+        }
+
+        if (Boolean.FALSE.equals(user.getIsActive())) {
+            throw new DisabledException("Account has been suspended. Please contact the administrator.");
         }
 
         String roleName = user.getRole() != null ? user.getRole().getName() : "STUDENT";
         String token = jwtService.generateToken(user.getEmail(), roleName, user.getId());
 
-        return new AuthenticationResponse(
-                token,
-                user.getId(),
-                user.getEmail(),
-                user.getFullName(),
-                roleName
-        );
+        return AuthenticationResponse.builder()
+                .token(token)
+                .userId(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(roleName)
+                .canCreateExams(user.getCanCreateExams())
+                .canManageQuestions(user.getCanManageQuestions())
+                .canManageSubjects(user.getCanManageSubjects())
+                .canViewSubmissions(user.getCanViewSubmissions())
+                .isActive(user.getIsActive())
+                .build();
     }
 
     public AuthenticationResponse adminLogin(LoginRequest request) {
-
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
@@ -81,19 +93,28 @@ public class UserService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        // Strict Backend Role Check: Only ADMIN role is permitted
-        if (user.getRole() == null || !user.getRole().getName().equalsIgnoreCase("ADMIN")) {
+        if (Boolean.FALSE.equals(user.getIsActive())) {
+            throw new DisabledException("Account has been suspended. Please contact the Super Administrator.");
+        }
+
+        String roleName = user.getRole() != null ? user.getRole().getName() : "";
+        if (!"ADMIN".equalsIgnoreCase(roleName) && !"SUPER_ADMIN".equalsIgnoreCase(roleName)) {
             throw new AccessDeniedException("Access denied: User does not have administrator privileges");
         }
 
-        String token = jwtService.generateToken(user.getEmail(), "ADMIN", user.getId());
+        String token = jwtService.generateToken(user.getEmail(), roleName, user.getId());
 
-        return new AuthenticationResponse(
-                token,
-                user.getId(),
-                user.getEmail(),
-                user.getFullName(),
-                "ADMIN"
-        );
+        return AuthenticationResponse.builder()
+                .token(token)
+                .userId(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(roleName)
+                .canCreateExams(user.getCanCreateExams())
+                .canManageQuestions(user.getCanManageQuestions())
+                .canManageSubjects(user.getCanManageSubjects())
+                .canViewSubmissions(user.getCanViewSubmissions())
+                .isActive(user.getIsActive())
+                .build();
     }
 }

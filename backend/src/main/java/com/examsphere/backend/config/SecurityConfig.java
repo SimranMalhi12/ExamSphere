@@ -42,12 +42,16 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/subjects/**", "/api/questions/**", "/api/exams/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/categories/**", "/api/subjects/**", "/api/questions/**", "/api/exams/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**", "/api/subjects/**", "/api/questions/**", "/api/exams/**").hasRole("ADMIN")
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/super-admin/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/subjects/**", "/api/questions/**", "/api/exams/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories/**", "/api/subjects/**", "/api/questions/**", "/api/exams/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**", "/api/subjects/**", "/api/questions/**", "/api/exams/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
+
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -58,7 +62,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.getWriter().write("{\"success\":false,\"status\":403,\"message\":\"Forbidden: Administrator privileges required\",\"data\":null}");
+                            response.getWriter().write("{\"success\":false,\"status\":403,\"message\":\"Forbidden: Insufficient privileges\",\"data\":null}");
                         })
                 )
 
@@ -69,4 +73,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-}
+}

@@ -4,8 +4,10 @@ import com.examsphere.backend.dto.QuestionRequest;
 import com.examsphere.backend.dto.QuestionResponse;
 import com.examsphere.backend.entity.Question;
 import com.examsphere.backend.entity.Subject;
+import com.examsphere.backend.exception.ResourceNotFoundException;
 import com.examsphere.backend.repository.QuestionRepository;
 import com.examsphere.backend.repository.SubjectRepository;
+import com.examsphere.backend.security.PermissionValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +19,14 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final SubjectRepository subjectRepository;
+    private final PermissionValidator permissionValidator;
 
     // Create Question
     public QuestionResponse createQuestion(QuestionRequest request) {
+        permissionValidator.validateCanManageQuestions();
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         Question question = Question.builder()
                 .questionText(request.getQuestionText())
@@ -43,7 +47,6 @@ public class QuestionService {
 
     // Get All Questions
     public List<QuestionResponse> getAllQuestions() {
-
         return questionRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -52,21 +55,21 @@ public class QuestionService {
 
     // Get Question By Id
     public QuestionResponse getQuestionById(Long id) {
-
         Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Question not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Question not found"));
 
         return mapToResponse(question);
     }
 
     // Update Question
     public QuestionResponse updateQuestion(Long id, QuestionRequest request) {
+        permissionValidator.validateCanManageQuestions();
 
         Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Question not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Question not found"));
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         question.setQuestionText(request.getQuestionText());
         question.setOptionA(request.getOptionA());
@@ -85,9 +88,10 @@ public class QuestionService {
 
     // Delete Question
     public String deleteQuestion(Long id) {
+        permissionValidator.validateCanManageQuestions();
 
         Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Question not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Question not found"));
 
         questionRepository.delete(question);
 
@@ -96,7 +100,6 @@ public class QuestionService {
 
     // Helper Method
     private QuestionResponse mapToResponse(Question question) {
-
         return QuestionResponse.builder()
                 .id(question.getId())
                 .questionText(question.getQuestionText())

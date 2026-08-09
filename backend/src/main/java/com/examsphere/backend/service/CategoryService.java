@@ -1,14 +1,14 @@
 package com.examsphere.backend.service;
 
-
 import com.examsphere.backend.dto.CategoryRequest;
 import com.examsphere.backend.dto.CategoryResponse;
 import com.examsphere.backend.entity.Category;
-import com.examsphere.backend.repository.CategoryRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import com.examsphere.backend.exception.DuplicateResourceException;
 import com.examsphere.backend.exception.ResourceNotFoundException;
+import com.examsphere.backend.repository.CategoryRepository;
+import com.examsphere.backend.security.PermissionValidator;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -17,9 +17,11 @@ import java.util.List;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final PermissionValidator permissionValidator;
 
     // Create Category
     public CategoryResponse createCategory(CategoryRequest request) {
+        permissionValidator.validateCanManageSubjects();
 
         if (categoryRepository.existsByName(request.getName())) {
             throw new DuplicateResourceException("Category already exists");
@@ -37,7 +39,6 @@ public class CategoryService {
 
     // Get All Categories
     public List<CategoryResponse> getAllCategories() {
-
         return categoryRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -46,7 +47,6 @@ public class CategoryService {
 
     // Get Category By ID
     public CategoryResponse getCategoryById(Long id) {
-
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
@@ -55,6 +55,7 @@ public class CategoryService {
 
     // Update Category
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
+        permissionValidator.validateCanManageSubjects();
 
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -69,6 +70,7 @@ public class CategoryService {
 
     // Delete Category
     public String deleteCategory(Long id) {
+        permissionValidator.validateCanManageSubjects();
 
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -80,7 +82,6 @@ public class CategoryService {
 
     // Helper Method
     private CategoryResponse mapToResponse(Category category) {
-
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())

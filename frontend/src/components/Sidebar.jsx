@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Layers,
@@ -11,28 +11,29 @@ import {
   LogOut,
   X,
   ClipboardList,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 
 const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
-  const { logout, user } = useAuth();
+  const { logout, user, isSuperAdmin, permissions } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     toast.info("Logged out successfully");
-    navigate("/login");
+    navigate(role === "ADMIN" || role === "SUPER_ADMIN" ? "/admin/login" : "/login");
   };
 
-  const adminLinks = [
-    { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/admin/categories", label: "Categories", icon: Layers },
-    { to: "/admin/subjects", label: "Subjects", icon: BookOpen },
-    { to: "/admin/questions", label: "Questions", icon: HelpCircle },
-    { to: "/admin/exams", label: "Exams", icon: FileCheck },
-    { to: "/admin/profile", label: "Profile", icon: User },
+  const rawAdminLinks = [
+    { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, enabled: true },
+    { to: "/admin/categories", label: "Categories", icon: Layers, enabled: permissions?.canManageSubjects },
+    { to: "/admin/subjects", label: "Subjects", icon: BookOpen, enabled: permissions?.canManageSubjects },
+    { to: "/admin/questions", label: "Questions", icon: HelpCircle, enabled: permissions?.canManageQuestions },
+    { to: "/admin/exams", label: "Exams", icon: FileCheck, enabled: permissions?.canCreateExams },
+    { to: "/admin/profile", label: "Profile", icon: User, enabled: true },
   ];
 
   const studentLinks = [
@@ -43,7 +44,11 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
     { to: "/student/profile", label: "Profile", icon: User },
   ];
 
-  const links = role === "ADMIN" ? adminLinks : studentLinks;
+  const adminLinks = isSuperAdmin
+    ? rawAdminLinks
+    : rawAdminLinks.filter((item) => item.enabled);
+
+  const links = role === "ADMIN" || role === "SUPER_ADMIN" ? adminLinks : studentLinks;
 
   return (
     <>
@@ -71,7 +76,7 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
                   ExamSphere
                 </span>
                 <span className="block text-[10px] font-mono text-zinc-400 uppercase -mt-0.5">
-                  {role === "ADMIN" ? "Admin Portal" : "Student Portal"}
+                  {role === "SUPER_ADMIN" ? "Super Admin" : role === "ADMIN" ? "Admin Portal" : "Student Portal"}
                 </span>
               </div>
             </div>
@@ -82,6 +87,18 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          {isSuperAdmin && (
+            <div className="p-3 mx-3 my-2 bg-amber-400/10 border border-amber-400/30">
+              <Link
+                to="/super-admin/dashboard"
+                className="flex items-center gap-1.5 text-xs font-mono text-amber-400 font-bold uppercase hover:underline"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Super Admin Console →</span>
+              </Link>
+            </div>
+          )}
 
           <nav className="p-4 space-y-1">
             <p className="px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-bold">

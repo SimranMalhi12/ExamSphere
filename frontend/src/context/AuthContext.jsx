@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
@@ -32,15 +32,24 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const permissions = {
+    canCreateExams: user?.canCreateExams !== false,
+    canManageQuestions: user?.canManageQuestions !== false,
+    canManageSubjects: user?.canManageSubjects !== false,
+    canViewSubmissions: user?.canViewSubmissions !== false,
+  };
+
   return (
     <AuthContext.Provider
       value={{
         token,
         role,
         user,
+        permissions,
         isAuthenticated: !!token,
+        isSuperAdmin: role === "SUPER_ADMIN",
         isAdmin: role === "ADMIN",
-        isStudent: role === "STUDENT",
+        isStudent: role === "STUDENT" || role === "USER",
         login,
         logout,
       }}

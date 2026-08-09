@@ -62,6 +62,22 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDisabled(
+            org.springframework.security.authentication.DisabledException ex) {
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .status(HttpStatus.FORBIDDEN.value())
+                .message(ex.getMessage() != null ? ex.getMessage() : "Account is suspended. Please contact administrator.")
+                .timestamp(LocalDateTime.now())
+                .data(null)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadCredentials(
             BadCredentialsException ex) {

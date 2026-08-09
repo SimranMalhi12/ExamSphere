@@ -3,6 +3,7 @@ package com.examsphere.backend.repository;
 import com.examsphere.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -15,4 +16,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByRole_Name(String roleName);
 
-}
+    List<User> findAllByRole_Name(String roleName);
+
+    List<User> findAllByRole_NameIn(List<String> roleNames);
+
+    long countByRole_Name(String roleName);
+
+    long countByRole_NameAndIsActive(String roleName, Boolean isActive);
+
+}

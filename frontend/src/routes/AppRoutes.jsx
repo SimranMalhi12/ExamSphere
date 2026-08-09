@@ -6,6 +6,7 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import AdminLogin from "../pages/admin/AdminLogin";
 
+// Admin Portal
 import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboard from "../pages/admin/Dashboard";
 import Categories from "../pages/admin/Categories";
@@ -14,6 +15,16 @@ import Questions from "../pages/admin/Questions";
 import Exams from "../pages/admin/Exams";
 import AdminProfile from "../pages/admin/Profile";
 
+// Super Admin Portal
+import SuperAdminLayout from "../layouts/SuperAdminLayout";
+import SuperAdminDashboard from "../pages/superadmin/Dashboard";
+import SuperAdminAdmins from "../pages/superadmin/Admins";
+import SuperAdminAllExams from "../pages/superadmin/AllExams";
+import SuperAdminStudents from "../pages/superadmin/Students";
+import SuperAdminSubmissions from "../pages/superadmin/Submissions";
+import SuperAdminProfile from "../pages/superadmin/Profile";
+
+// Student Portal
 import StudentLayout from "../layouts/StudentLayout";
 import StudentDashboard from "../pages/student/Dashboard";
 import AvailableExams from "../pages/student/AvailableExams";
@@ -32,11 +43,29 @@ const AppRoutes = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/admin/login" element={<AdminLogin />} />
 
+      {/* Super Admin Control Center */}
       <Route
+        path="/super-admin"
+        element={
+          <ProtectedRoute allowedRole="SUPER_ADMIN">
+            <SuperAdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/super-admin/dashboard" replace />} />
+        <Route path="dashboard" element={<SuperAdminDashboard />} />
+        <Route path="admins" element={<SuperAdminAdmins />} />
+        <Route path="exams" element={<SuperAdminAllExams />} />
+        <Route path="students" element={<SuperAdminStudents />} />
+        <Route path="submissions" element={<SuperAdminSubmissions />} />
+        <Route path="profile" element={<SuperAdminProfile />} />
+      </Route>
 
+      {/* Standard Admin Portal */}
+      <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRole="ADMIN">
+          <ProtectedRoute allowedRoles={["ADMIN", "SUPER_ADMIN"]}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -50,6 +79,7 @@ const AppRoutes = () => {
         <Route path="profile" element={<AdminProfile />} />
       </Route>
 
+      {/* Student Portal */}
       <Route
         path="/student"
         element={

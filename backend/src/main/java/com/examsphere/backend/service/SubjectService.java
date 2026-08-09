@@ -5,8 +5,10 @@ import com.examsphere.backend.dto.SubjectResponse;
 import com.examsphere.backend.entity.Category;
 import com.examsphere.backend.entity.Subject;
 import com.examsphere.backend.exception.DuplicateResourceException;
+import com.examsphere.backend.exception.ResourceNotFoundException;
 import com.examsphere.backend.repository.CategoryRepository;
 import com.examsphere.backend.repository.SubjectRepository;
+import com.examsphere.backend.security.PermissionValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,16 +20,18 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final CategoryRepository categoryRepository;
+    private final PermissionValidator permissionValidator;
 
     // Create Subject
     public SubjectResponse createSubject(SubjectRequest request) {
+        permissionValidator.validateCanManageSubjects();
 
         if (subjectRepository.existsByName(request.getName())) {
             throw new DuplicateResourceException("Subject already exists");
         }
 
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         Subject subject = Subject.builder()
                 .name(request.getName())
@@ -42,7 +46,6 @@ public class SubjectService {
 
     // Get All Subjects
     public List<SubjectResponse> getAllSubjects() {
-
         return subjectRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -51,21 +54,21 @@ public class SubjectService {
 
     // Get Subject By Id
     public SubjectResponse getSubjectById(Long id) {
-
         Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         return mapToResponse(subject);
     }
 
     // Update Subject
     public SubjectResponse updateSubject(Long id, SubjectRequest request) {
+        permissionValidator.validateCanManageSubjects();
 
         Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         subject.setName(request.getName());
         subject.setDescription(request.getDescription());
@@ -78,9 +81,10 @@ public class SubjectService {
 
     // Delete Subject
     public String deleteSubject(Long id) {
+        permissionValidator.validateCanManageSubjects();
 
         Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         subjectRepository.delete(subject);
 
@@ -89,7 +93,6 @@ public class SubjectService {
 
     // Helper Method
     private SubjectResponse mapToResponse(Subject subject) {
-
         return SubjectResponse.builder()
                 .id(subject.getId())
                 .name(subject.getName())
