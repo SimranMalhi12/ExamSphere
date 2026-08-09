@@ -203,16 +203,6 @@ const Register = () => {
               Sign In →
             </Link>
           </div>
-
-          <div className="mt-4 p-3 bg-zinc-900 text-white flex items-center justify-between text-xs font-mono">
-            <span className="text-zinc-400">Are you an Admin?</span>
-            <Link
-              to="/admin/login"
-              className="text-amber-400 font-bold hover:underline uppercase tracking-wider"
-            >
-              Admin Portal →
-            </Link>
-          </div>
         </div>
 
         <div className="text-center mt-6 flex items-center justify-center gap-4 text-xs font-mono text-zinc-400">

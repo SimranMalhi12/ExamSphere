@@ -45,7 +45,7 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     toast.info("Logged out successfully");
-    navigate("/admin/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const fetchDashboardData = async () => {

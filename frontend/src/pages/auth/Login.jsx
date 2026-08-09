@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { Input } from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Mail, ShieldCheck } from "lucide-react";
 
 const Login = () => {
   const { login, isAuthenticated, role } = useAuth();
@@ -49,7 +49,13 @@ const Login = () => {
       const userRole = response.role || "STUDENT";
 
       const userPayload = {
-        fullName: response.fullName || (userRole === "SUPER_ADMIN" ? "Super Administrator" : userRole === "ADMIN" ? "Administrator" : "Student"),
+        fullName:
+          response.fullName ||
+          (userRole === "SUPER_ADMIN"
+            ? "Super Administrator"
+            : userRole === "ADMIN"
+            ? "Administrator"
+            : "Student"),
         email: email.trim(),
         role: userRole,
         id: response.userId || response.id || 1,
@@ -60,14 +66,16 @@ const Login = () => {
       };
 
       login(response.token, userRole, userPayload);
-      toast.success(`Welcome back, ${userPayload.fullName}!`);
+      toast.success(
+        `Welcome, ${userPayload.fullName}! (${userRole === "SUPER_ADMIN" ? "Super Admin" : userRole === "ADMIN" ? "Admin" : "Candidate"})`
+      );
 
       if (userRole === "SUPER_ADMIN") {
-        navigate("/super-admin/dashboard");
+        navigate("/super-admin/dashboard", { replace: true });
       } else if (userRole === "ADMIN") {
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard", { replace: true });
       } else {
-        navigate("/student/dashboard");
+        navigate("/student/dashboard", { replace: true });
       }
     } catch (err) {
       const msg =
@@ -84,6 +92,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center p-4 selection:bg-white selection:text-zinc-950">
       <div className="w-full max-w-md">
+        {/* Header Branding */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-3 group">
             <div className="w-9 h-9 bg-white text-zinc-950 flex items-center justify-center font-mono font-extrabold text-base border border-white">
@@ -93,21 +102,23 @@ const Login = () => {
               ExamSphere
             </span>
           </Link>
-          <p className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-            Secure Examination Access Portal
-          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+            <span>Unified Platform Access</span>
+          </div>
         </div>
 
+        {/* Login Box */}
         <div
           style={{ borderRadius: "0px" }}
-          className="bg-white border border-zinc-900 shadow-2xl p-8"
+          className="bg-white border-2 border-zinc-900 shadow-2xl p-8"
         >
           <div className="border-b border-zinc-200 pb-4 mb-6">
             <h2 className="text-xl font-extrabold uppercase tracking-tight text-zinc-950">
               Sign In
             </h2>
             <p className="text-xs text-zinc-500 mt-1">
-              Enter your registered credentials to access tests and records.
+              Enter your credentials to access your Candidate, Admin, or Super Admin portal.
             </p>
           </div>
 
@@ -150,7 +161,7 @@ const Login = () => {
                 variant="primary"
                 size="lg"
                 loading={loading}
-                className="w-full font-bold"
+                className="w-full font-bold uppercase tracking-wider"
               >
                 Sign In to Platform
               </Button>
@@ -158,29 +169,22 @@ const Login = () => {
           </form>
 
           <div className="mt-6 pt-5 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-500">
-            <span>Don't have an account?</span>
+            <span>New Student Candidate?</span>
             <Link
               to="/register"
               className="font-bold text-zinc-950 hover:underline uppercase tracking-wider text-[11px]"
             >
-              Create Account →
+              Register Account →
             </Link>
           </div>
         </div>
 
-        <div className="text-center mt-6 flex items-center justify-center gap-4 text-xs font-mono text-zinc-400">
+        <div className="text-center mt-6 text-xs font-mono text-zinc-400">
           <Link
             to="/"
             className="hover:text-white uppercase tracking-widest transition-colors"
           >
-            ← Homepage
-          </Link>
-          <span>•</span>
-          <Link
-            to="/admin/login"
-            className="hover:text-amber-400 font-semibold uppercase tracking-widest transition-colors"
-          >
-            Admin Portal →
+            ← Back to Homepage
           </Link>
         </div>
       </div>

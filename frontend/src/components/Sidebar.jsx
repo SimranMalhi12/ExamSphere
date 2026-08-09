@@ -24,7 +24,7 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
   const handleLogout = () => {
     logout();
     toast.info("Logged out successfully");
-    navigate(role === "ADMIN" || role === "SUPER_ADMIN" ? "/admin/login" : "/login");
+    navigate("/login");
   };
 
   const rawAdminLinks = [

@@ -26,7 +26,7 @@ const SuperAdminLayout = () => {
   const handleLogout = () => {
     logout();
     toast.success("Super Administrator signed out successfully.");
-    navigate("/admin/login");
+    navigate("/login");
   };
 
   const navItems = [

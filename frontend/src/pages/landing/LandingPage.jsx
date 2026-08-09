@@ -18,7 +18,12 @@ import { useAuth } from "../../context/AuthContext";
 
 const LandingPage = () => {
   const { isAuthenticated, role } = useAuth();
-  const dashboardLink = role === "ADMIN" ? "/admin/dashboard" : "/student/dashboard";
+  const dashboardLink =
+    role === "SUPER_ADMIN"
+      ? "/super-admin/dashboard"
+      : role === "ADMIN"
+      ? "/admin/dashboard"
+      : "/student/dashboard";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-white selection:text-zinc-950">
@@ -387,10 +392,10 @@ const LandingPage = () => {
           <div className="flex items-center gap-6">
             <span>Online Examination Platform</span>
             <Link
-              to="/admin/login"
-              className="text-zinc-400 hover:text-amber-400 font-semibold transition-colors flex items-center gap-1"
+              to="/login"
+              className="text-zinc-400 hover:text-white font-semibold transition-colors flex items-center gap-1"
             >
-              <span>Admin Portal →</span>
+              <span>Platform Sign In →</span>
             </Link>
           </div>
         </div>

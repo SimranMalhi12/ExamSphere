@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "../pages/landing/LandingPage";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
-import AdminLogin from "../pages/admin/AdminLogin";
 
 // Admin Portal
 import AdminLayout from "../layouts/AdminLayout";
@@ -41,7 +40,7 @@ const AppRoutes = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
       {/* Super Admin Control Center */}
       <Route
