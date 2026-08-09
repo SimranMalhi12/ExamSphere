@@ -106,10 +106,10 @@ const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
-                Welcome, Admin
+                {adminName}&apos;s Workspace
               </h1>
               <p className="text-zinc-400 text-xs sm:text-sm mt-1">
-                You have full administrative control over examination creation, subject modules, and question banks.
+                Private admin console — Exams, questions, subjects, and categories authored here are isolated to your workspace.
               </p>
             </div>
             {/* Admin Details */}

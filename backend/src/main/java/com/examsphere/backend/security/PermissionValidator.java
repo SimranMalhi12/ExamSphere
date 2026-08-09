@@ -68,7 +68,20 @@ public class PermissionValidator {
         }
     }
 
-    private User getCurrentUser() {
+    public void validateOwnershipOrSuperAdmin(User resourceCreator) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) return;
+
+        if ("SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName())) {
+            return;
+        }
+
+        if (resourceCreator != null && !resourceCreator.getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Forbidden: You cannot modify or delete a resource created by another administrator.");
+        }
+    }
+
+    public User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
             return null;
@@ -76,5 +89,15 @@ public class PermissionValidator {
 
         Optional<User> userOpt = userRepository.findByEmail(auth.getName());
         return userOpt.orElse(null);
+    }
+
+    public boolean isSuperAdmin() {
+        User currentUser = getCurrentUser();
+        return currentUser != null && "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName());
+    }
+
+    public boolean isAdmin() {
+        User currentUser = getCurrentUser();
+        return currentUser != null && "ADMIN".equalsIgnoreCase(currentUser.getRole().getName());
     }
 }

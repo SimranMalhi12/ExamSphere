@@ -4,6 +4,7 @@ import com.examsphere.backend.dto.QuestionRequest;
 import com.examsphere.backend.dto.QuestionResponse;
 import com.examsphere.backend.entity.Question;
 import com.examsphere.backend.entity.Subject;
+import com.examsphere.backend.entity.User;
 import com.examsphere.backend.exception.ResourceNotFoundException;
 import com.examsphere.backend.repository.QuestionRepository;
 import com.examsphere.backend.repository.SubjectRepository;
@@ -21,9 +22,11 @@ public class QuestionService {
     private final SubjectRepository subjectRepository;
     private final PermissionValidator permissionValidator;
 
-    // Create Question
+    // Create Question (Scoped to creating Admin)
     public QuestionResponse createQuestion(QuestionRequest request) {
         permissionValidator.validateCanManageQuestions();
+
+        User currentUser = permissionValidator.getCurrentUser();
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
@@ -38,6 +41,7 @@ public class QuestionService {
                 .difficulty(request.getDifficulty())
                 .marks(request.getMarks())
                 .subject(subject)
+                .createdBy(currentUser)
                 .build();
 
         Question savedQuestion = questionRepository.save(question);
@@ -45,8 +49,17 @@ public class QuestionService {
         return mapToResponse(savedQuestion);
     }
 
-    // Get All Questions
+    // Get All Questions (Scoped for Admins, Global for SuperAdmin)
     public List<QuestionResponse> getAllQuestions() {
+        User currentUser = permissionValidator.getCurrentUser();
+
+        if (currentUser != null && permissionValidator.isAdmin()) {
+            return questionRepository.findAllByCreatedBy_Id(currentUser.getId())
+                    .stream()
+                    .map(this::mapToResponse)
+                    .toList();
+        }
+
         return questionRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -67,6 +80,8 @@ public class QuestionService {
 
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Question not found"));
+
+        permissionValidator.validateOwnershipOrSuperAdmin(question.getCreatedBy());
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
@@ -92,6 +107,8 @@ public class QuestionService {
 
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Question not found"));
+
+        permissionValidator.validateOwnershipOrSuperAdmin(question.getCreatedBy());
 
         questionRepository.delete(question);
 

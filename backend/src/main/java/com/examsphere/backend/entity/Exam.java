@@ -28,6 +28,10 @@ public class Exam {
     @Enumerated(EnumType.STRING)
     private ExamStatus status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
+
     @ManyToOne
     @JoinColumn(name = "subject_id")
     private Subject subject;

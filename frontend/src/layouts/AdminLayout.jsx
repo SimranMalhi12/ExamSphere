@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AdminLayout = () => {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const adminName = user?.fullName || "Administrator";
 
   return (
     <div className="min-h-screen bg-zinc-100 flex flex-col">
@@ -17,7 +20,7 @@ const AdminLayout = () => {
       <div className="lg:pl-64 flex flex-col flex-1 min-w-0">
         <Navbar
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          title="ExamSphere Admin Management"
+          title={`${adminName}'s Workspace`}
           roleLabel="Administrator"
         />
 

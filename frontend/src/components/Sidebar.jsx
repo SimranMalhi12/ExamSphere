@@ -75,8 +75,12 @@ const Sidebar = ({ isOpen, onClose, role = "ADMIN" }) => {
                 <span className="text-base font-extrabold tracking-wider uppercase text-white">
                   ExamSphere
                 </span>
-                <span className="block text-[10px] font-mono text-zinc-400 uppercase -mt-0.5">
-                  {role === "SUPER_ADMIN" ? "Super Admin" : role === "ADMIN" ? "Admin Portal" : "Student Portal"}
+                <span className="block text-[10px] font-mono text-zinc-400 uppercase -mt-0.5 truncate max-w-[130px]">
+                  {role === "SUPER_ADMIN"
+                    ? "Super Admin"
+                    : role === "ADMIN"
+                    ? `${user?.fullName ? user.fullName.split(" ")[0] + "'s" : "Admin"} Workspace`
+                    : "Student Portal"}
                 </span>
               </div>
             </div>
